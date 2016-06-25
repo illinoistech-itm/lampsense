@@ -1,0 +1,8 @@
+
+1) Direct addressing
+  - Coordinator: API mode 1
+  - Router: AT mode, channel verification true (atdjv1), analog port 0
+
+2) Mesh network
+  - Coordinator:
+  - Router: 
