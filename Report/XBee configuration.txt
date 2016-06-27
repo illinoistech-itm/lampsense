@@ -1,8 +1,9 @@
 
 1) Direct addressing
   - Coordinator: API mode 1
-  - Router: AT mode, channel verification true (atdjv1), analog port 0
+  - Router: AT mode, channel verification true (atdjv1), analog port 0, address destination is the other node that it is connected
 
 2) Mesh network
-  - Coordinator:
-  - Router: 
+  - Coordinator: API mode 1
+  - Router: AT mode, channel verification true (atdjv1), analog port 0, 
+  - End Device: AT mode, address destination (should be to a router or the network coordinator), sleeping cycle with pin-wake, ATSP (duration of sleep - Note that is *10 ms), ATST (timeout before sleeping)
