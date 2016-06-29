@@ -1,4 +1,3 @@
-
 #include <SPI.h>
 #include <Ethernet.h>
 
@@ -12,6 +11,7 @@ int hueBri[3];
 long hueHue[3];
 int hueSat[3];
 String command;
+String commandOn = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
 String commandOff = "{\"on\": false}";
 int randomNum;
 const int debugLED = 13;
@@ -70,7 +70,16 @@ void loop() {
       setHue(2, commandOff);
       delay(500);
     }
-    else if (c == 'O' || c == 'o') {
+    else if (c == 'N' || c == 'n') {
+      Serial.println("Turning all on");
+      setHue(1, commandOn);
+      delay(100);
+      setHue(2, commandOn);
+      delay(100);
+      setHue(3, commandOn);
+      delay(500);
+    }
+    else if (c == 'F' || c == 'f') {
       Serial.println("Turning all off");
       setHue(1, commandOff);
       delay(100);
@@ -181,4 +190,3 @@ boolean getHue(int lightNum)
     Serial.println("getHue() - Command failed");
   return false;
 }
-
