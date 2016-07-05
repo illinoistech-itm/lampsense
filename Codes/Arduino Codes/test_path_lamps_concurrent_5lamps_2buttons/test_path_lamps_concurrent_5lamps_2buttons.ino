@@ -9,7 +9,7 @@ const int hueBridgePort = 80;
 const int numLamps = 5;
 const int button1 = 7;
 const int button2 = 8;
-const unsigned long int interval = 500; // 500 ms
+const unsigned long int interval = 1000; // 500 ms
 
 String hueOn;
 int hueBri;
@@ -17,7 +17,7 @@ long hueHue;
 int hueSat;
 int path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path; 2: right path; 3: left and right paths (sum)
 int pathLeft[] = {1, 1, 1, 0, 0};  // 1 for lamp being part of such path; 0 for not
-int pathRight[] = {1, 1, 0, 1, 1};
+int pathRight[] = {1, 0, 0, 1, 1};
 unsigned int color[numLamps]; // current color for each lamp
 String command;
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
@@ -62,9 +62,9 @@ void loop() {
 
   // Evaluate if button was pressed - Button 1 for left path, button 2 for right path
   if (digitalRead(button1) == HIGH) {
-    deletePath(1, "\n\nPerson arrived at right side");
+    deletePath(1, "\n\nPerson arrived at left side");
   } else if (digitalRead(button2) == HIGH) {
-    deletePath(2, "\n\nPerson arrived at left side");
+    deletePath(2, "\n\nPerson arrived at right side");
   }
 
   // Evaluate state of lamps
@@ -72,7 +72,8 @@ void loop() {
     if (path[i] == 3) {
       currentTime = millis();
       if ((previousTime + interval) < currentTime) { // need to fix for millis reseting
-        color[i] = 70000 + color[i]; // if color is 20000 turn it to 50000 and vice versa
+        color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
+        Serial.println(color[i]);
         command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(color[i]) + ",\"sat\":235}";
         setHue(i + 1, command);
         previousTime = currentTime;
@@ -84,19 +85,19 @@ void loop() {
   if (Serial.available() > 0) {
     c = Serial.read();
     if (c == 'L' || c == 'l') {
-      getPreviousState();
+      //getPreviousState();
       addPath(1, "Going to left <--");
     }
     else if (c == 'R' || c == 'r') {
-      getPreviousState();
+      //getPreviousState();
       addPath(2, "Going to right -->");
     }
     else if (c == 'N' || c == 'n') {
-      getPreviousState();
+      //getPreviousState();
       setAllLamps(0, "Turning all on");    // Second parameter to 0 for all lamps on
     }
     else if (c == 'F' || c == 'f') {
-      getPreviousState();
+      //getPreviousState();
       setAllLamps(-1, "Turning all off");
     }
   }
@@ -147,9 +148,10 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
   Serial.println(message);
   if (addedPath == 1) { // left case
     for (int j = 1; j < numLamps + 1; j++) {
-      if (pathLeft[j - 1] == 2) {
+      if (pathLeft[j - 1] == 1) {
         setHue(j, commandLeft);
         path[j - 1] = path[j - 1] + addedPath;
+        color[j - 1] = 20000;
         delay(50);
       }
     }
@@ -159,6 +161,7 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
       if (pathRight[j - 1] == 1) {
         setHue(j, commandRight);
         path[j - 1] = path[j - 1] + addedPath;
+        color[j - 1] = 50000;
         delay(50);
       }
     }
