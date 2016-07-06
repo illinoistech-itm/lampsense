@@ -165,6 +165,8 @@ void processSelection(String httpReq) {
     setAllLamps(0, "Turning all on"); // Second parameter to 0 for all lamps on
   } else if (httpReq.indexOf("GET /?command=off") > -1) {
     setAllLamps(-1, "Turning all off");
+  } else if (httpReq.indexOf("GET /?command=temp") > -1) {
+    getTemp();
   } else {
     Serial.println("Error in processSelection function");
   }
@@ -208,6 +210,8 @@ void sendHtmlPage(EthernetClient client) {
     "             document.write('<strong>Processing...</strong> Turning all the lights on.');"
     "           } else if (command == 'off') {"
     "             document.write('<strong>Processing...</strong> Turning all the lights off.');"
+    "           } else if (command == 'temp') {"
+    "             document.write('<strong>Processing...</strong> Coloring all the lights according to the temperature.');"
     "           }"
     "         document.write('</div>');"
     "       }"
@@ -228,6 +232,9 @@ void sendHtmlPage(EthernetClient client) {
     "       </a>"
     "       <a class=\"btn btn-primary btn-lg\" href=\"?command=off\">"
     "         <span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span> Turn All Off"
+    "       </a>"
+    "       <a class=\"btn btn-primary btn-lg\" href=\"index.html?command=temp\">"
+    "         <span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature"
     "       </a>"
     "     </div>"
     "   </div>"
