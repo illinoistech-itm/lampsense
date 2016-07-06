@@ -37,6 +37,7 @@ String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
 const int debugLED = 13;
 int i, cmd;
 unsigned long int previousTime = 0xFFFFFFFF, currentTime;
+float lastValidTemp;
 
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
@@ -134,7 +135,7 @@ void loop() {
   if (Serial.available() > 0) {
     cmd = Serial.read();
     if (cmd =='t' || cmd=='T'){
-      getTemp();
+      showTemp();
     }
     if (cmd == 'L' || cmd == 'l') {
       //getPreviousState();
@@ -153,6 +154,9 @@ void loop() {
       setAllLamps(-1, "Turning all off");
     }
   }
+
+  //Evaluate if input was given via Xbee serial port
+  getTemp();
 }
 
 // Operate the lamps according to the button pressed
@@ -166,7 +170,7 @@ void processSelection(String httpReq) {
   } else if (httpReq.indexOf("GET /?command=off") > -1) {
     setAllLamps(-1, "Turning all off");
   } else if (httpReq.indexOf("GET /?command=temp") > -1) {
-    getTemp();
+    showTemp();
   } else {
     Serial.println("Error in processSelection function");
   }
@@ -215,12 +219,12 @@ void sendHtmlPage(EthernetClient client) {
     "           }"
     "         document.write('</div>');"
     "       }"
-    "     </script>"
-    "     <div class=\"jumbotron\">"
+    "     </script>");
+  client.println("     <div class=\"jumbotron\">"
     "       <h1>Arduino + Philips Hue</h1> "
     "       <p>Click on the buttons to operate the lights.</p> "
-    "     </div>");
-  client.println("     <div class=\"btn-group\">"
+    "     </div>"
+    "     <div class=\"btn-group\">"
     "       <a class=\"btn btn-primary btn-lg\" href=\"?command=left\">"
     "         <span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Left"
     "       </a>"
@@ -233,7 +237,7 @@ void sendHtmlPage(EthernetClient client) {
     "       <a class=\"btn btn-primary btn-lg\" href=\"?command=off\">"
     "         <span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span> Turn All Off"
     "       </a>"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"index.html?command=temp\">"
+    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=temp\">"
     "         <span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature"
     "       </a>"
     "     </div>"
@@ -247,21 +251,17 @@ void sendHtmlPage(EthernetClient client) {
   );
 }
 
-void getTemp(){
+void getTemp() {
+
   byte discard, analogHigh, analogLow;
   int analogValue = 0;
   float temp = 0;
   boolean received = false;
-  
-  // Serial.println("Trying to read temperature");
+
   // make sure everything we need is in the buffer
   if (xbee.available() >= 21) {
     // look for the start byte
     if (xbee.read() == 0x7E) {
-      //blink debug LED to indicate when data is received
-      digitalWrite(debugLED, HIGH);
-      delay(10);
-      digitalWrite(debugLED, LOW);
       // read the variables that we're not using out of the buffer
       for (int i = 1; i < 19 ; i++) {
         discard = xbee.read();
@@ -274,33 +274,50 @@ void getTemp(){
       received = true;
     }
   }
-  if (received) {
-    Serial.print("Value received: ");
-    Serial.print(analogValue);
-    Serial.print(" = ");
-    Serial.print(temp);
-    Serial.println(" ºC");
-    tempToLamp(&temp);
-    delay(5000);
-    setAllLamps(0, commandOn);
-    pathUsed[0] = pathUsed[1] = 0;
+  if (received) {    
+    if (temp > 0.0 || temp < 50.0) {
+      lastValidTemp = temp;
+    }
     received = false;
   }
+
+}
+
+void showTemp() {
+
+  Serial.print("Temperature: ");
+  Serial.print(lastValidTemp);
+  Serial.println(" ºC");
+  tempToLamp(&lastValidTemp);
+  delay(3000);
+  setAllLamps(0, commandOn);
+  pathUsed[0] = pathUsed[1] = 0;
+
 }
 
 void tempToLamp(float* temp) {
+
   if (*temp < 15.0) {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 55000,\"sat\":235}";
     setAllLamps(-2, command);
   }
+  else if (*temp < 20.0) {
+    command = "{\"on\": true,\"bri\": 215,\"hue\": 42000,\"sat\":235}";
+    setAllLamps(-2, command);
+  }
   else if (*temp < 25.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 30000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 100,\"hue\": 35000,\"sat\":255}";
+    setAllLamps(-2, command);
+  }
+  else if (*temp < 30.0) {
+    command = "{\"on\": true,\"bri\": 215,\"hue\": 10000,\"sat\":235}";
     setAllLamps(-2, command);
   }
   else {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
     setAllLamps(-2, command);
   }
+
 }
 
 void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 for all on (normal), 1 for left, 2 for right
