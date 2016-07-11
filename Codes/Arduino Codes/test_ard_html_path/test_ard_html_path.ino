@@ -86,7 +86,7 @@ void loop() {
           client.println("Content-Type: text/html");
           client.println("Connection: close");
           client.println();
-          sendHtmlPage(client); // send web page
+          sendHtmlPage(client, httpReq); // send web page
           Serial.println();
           Serial.print(httpReq);
           Serial.println();
@@ -176,7 +176,7 @@ void processSelection(String httpReq) {
   }
 }
 
-void sendHtmlPage(EthernetClient client) {
+void sendHtmlPage(EthernetClient client, String httpReq) {
   client.println(
     "<!DOCTYPE html>"
     "<html>"
@@ -238,8 +238,13 @@ void sendHtmlPage(EthernetClient client) {
     "         <span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span> Turn All Off"
     "       </a>"
     "       <a class=\"btn btn-primary btn-lg\" href=\"?command=temp\">"
-    "         <span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature"
-    "       </a>"
+    "         <span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature");
+  if (httpReq.indexOf("GET /?command=temp") > -1) {
+    client.print(" <span class=\"badge\">");
+    client.print(lastValidTemp);
+    client.println(" °C</span>");
+  }
+  client.println("       </a>"
     "     </div>"
     "   </div>"
     "   <!-- Latest (compatible) compiled and minified jQuery -->"
@@ -275,7 +280,7 @@ void getTemp() {
     }
   }
   if (received) {    
-    if (temp > 0.0 || temp < 50.0) {
+    if (temp > 0.0 && temp < 50.0) {
       lastValidTemp = temp;
     }
     received = false;
