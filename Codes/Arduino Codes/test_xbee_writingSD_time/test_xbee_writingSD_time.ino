@@ -108,7 +108,7 @@ void receivePackage() {
     Serial.println(" ºC");
     */
     DateTime now = RTC.now();
-    char timeNow[6];
+    static char timeNow[6];
     sprintf(timeNow, "%02d%02d%02d", now.hour(), now.minute(), now.second());
     textToWrite = "{\"sender:\"" + String(sender[3]) + ",\"time:\"" + timeNow + ",\"temperature:\"" + String(temp) + "}";
     writeToFile(textToWrite);
