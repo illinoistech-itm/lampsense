@@ -257,7 +257,6 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
 }
 
 void getTemp() {
-
   byte discard, analogHigh, analogLow;
   int analogValue = 0;
   float temp = 0;
@@ -285,11 +284,9 @@ void getTemp() {
     }
     received = false;
   }
-
 }
 
 void showTemp() {
-
   Serial.print("Temperature: ");
   Serial.print(lastValidTemp);
   Serial.println(" ºC");
@@ -297,11 +294,9 @@ void showTemp() {
   delay(3000);
   setAllLamps(0, commandOn);
   pathUsed[0] = pathUsed[1] = 0;
-
 }
 
 void tempToLamp(float* temp) {
-
   if (*temp < 15.0) {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 55000,\"sat\":235}";
     setAllLamps(-2, command);
@@ -322,7 +317,6 @@ void tempToLamp(float* temp) {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
     setAllLamps(-2, command);
   }
-
 }
 
 void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 for all on (normal), 1 for left, 2 for right
@@ -376,6 +370,14 @@ void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 f
 
 void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for right
   Serial.println(message);
+
+  // If the lamps are turned off, set their values to 0, so that the sum works accurately
+  for (int j = 1; j < numLamps + 1; j++) {
+    if (path[j - 1] == -1) {
+      path[j - 1] = 0;
+    }
+  }
+
   if (addedPath == 1) { // left case
     if (pathUsed[0] == 1) Serial.println("Error: left path is already being used");
     else {
