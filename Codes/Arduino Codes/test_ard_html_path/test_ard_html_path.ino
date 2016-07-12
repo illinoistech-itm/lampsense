@@ -8,6 +8,10 @@ IPAddress ip(192, 168, 1, 252); // IP address, may need to change depending on n
 // IPAddress ip(10, 101, 2, 252); // IP address of the computer lab network
 EthernetServer server(80); // create a server at port 80
 
+// Database connection variables
+IPAddress serverDB(192, 168, 1, 153);
+EthernetClient clientDB;
+
 // Hue variables
 const char hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
 // const char hueBridgeIP[] = "10.101.2.54"; // IP address of the computer lab network
@@ -17,7 +21,8 @@ const int hueBridgePort = 80;
 const int numLamps = 5;
 const int button1 = 7;
 const int button2 = 8;
-const unsigned long int interval = 1000; // 500 ms
+// const unsigned long int interval = 1000; // 500 ms
+const unsigned long int interval = 5000; // 500 ms
 
 String hueOn;
 int hueBri;
@@ -66,10 +71,12 @@ void loop() {
   EthernetClient client = server.available(); // try to get client
 
   if (client) { // got client?
+    Serial.println("Debug 1!");
     boolean currentLineIsBlank = true;
 
     while (client.connected()) {
       if (client.available()) { // client data available to read
+        Serial.println("Debug 2!");
         char c = client.read(); // read 1 byte (character) from client
         httpReq += c; // save the HTTP request 1 char at a time
 
@@ -157,6 +164,35 @@ void loop() {
 
   //Evaluate if input was given via Xbee serial port
   getTemp();
+
+  currentTime = millis();
+  if ((previousTime + interval) < currentTime) {
+    connect(); // DEBUG
+    previousTime = currentTime;
+  }
+}
+
+
+// Connect and send an HTTP request to the database
+void connect() {
+  if (clientDB.connect(serverDB, 8081)) {
+    Serial.print("Make a HTTP request...");
+
+    clientDB.println("GET /insertTemperature?room=RoomTest&temperature=TempTest&datetime=DateTest HTTP/1.0");
+    clientDB.println("HOST: 192.168.1.153:8081");
+    clientDB.println();
+
+    Serial.println("OK!");
+  } else {
+    // If you didn't get a connection to the server:
+    Serial.println("Connection failed!");
+
+    clientDB.println("GET /insertTemperature?room=RoomTest&temperature=TempTest&datetime=DateTest HTTP/1.0");
+    clientDB.println("HOST: 192.168.1.153:8081");
+    clientDB.println();
+
+    Serial.println("OK!");
+  }
 }
 
 // Operate the lamps according to the button pressed
