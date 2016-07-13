@@ -116,9 +116,9 @@ void loop() {
 
   // Evaluate if button was pressed - Button 1 for left path, button 2 for right path
   if (digitalRead(button1) == HIGH) {
-    deletePath(1, "\n\nPerson arrived at left side");
+    deletePath(1, "\n\nPerson arrived at left side.");
   } else if (digitalRead(button2) == HIGH) {
-    deletePath(2, "\n\nPerson arrived at right side");
+    deletePath(2, "\n\nPerson arrived at right side.");
   }
 
   // Evaluate state of lamps
@@ -162,11 +162,11 @@ void loop() {
   getTemp();
 
   // Send the temperature via GET every X (intervalDB) milliseconds
-  // currentTime = millis();
-  // if ((previousTime + intervalDB) < currentTime) {
-  //   sendTempViaGet();
-  //   previousTime = currentTime;
-  // }
+  currentTime = millis();
+  if ((previousTime + intervalDB) < currentTime) {
+    sendTempViaGet();
+    previousTime = currentTime;
+  }
 }
 
 // Connect and send an HTTP request to the database
@@ -175,7 +175,6 @@ void connect() {
     Serial.println("Connection to the DB server successful.");
   } else {
     Serial.println("Connection to the DB server failed.");
-    sendTempViaGet();
   }
 }
 
@@ -208,6 +207,10 @@ void processSelection(String httpReq) {
     setAllLamps(-1, "Turning all off");
   } else if (httpReq.indexOf("GET /?command=temp") > -1) {
     showTemp();
+  } else if (httpReq.indexOf("GET /?command=arrivedLeft") > -1) {
+    deletePath(1, "\n\nPerson arrived at left side.");
+  } else if (httpReq.indexOf("GET /?command=arrivedRight") > -1) {
+    deletePath(2, "\n\nPerson arrived at right side.");
   } else {
     Serial.println("Error in processSelection function.");
   }
@@ -217,68 +220,75 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   client.println(
     "<!DOCTYPE html>"
     "<html>"
-    " <head>"
-    "   <title></title>"
-    "   <meta charset=\"utf-8\">"
-    "   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-    "   <!-- Latest compiled and minified CSS -->"
-    "   <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">"
-    "   <!-- Optional theme -->"
-    "   <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css\" integrity=\"sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r\" crossorigin=\"anonymous\">"
-    "   <script type=\"text/javascript\">"
-    "     function getUrlVars() {"
-    "       var vars = {};"
-    "       var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {"
-    "         vars[key] = value;"
-    "       });"
-    "       return vars;"
-    "     }"
-    "   </script>"
-    " </head>"
-    " <body>"
-    "   <div class=\"container\">"
-    "     <script type=\"text/javascript\">"
-    "       var command = getUrlVars()['command'];"
-    "       console.log(command);"
-    "       if (command != undefined) {"
-    "         document.write(`<div class=\"alert alert-info fade in\">"
-    "           <a href=\"#\" class=\"close\" data-dismiss=\"alert\" aria-label=\"close\">&times;</a>`);"
-    "           if (command == 'left') {"
-    "             document.write('<strong>Processing...</strong> Lightning the path to the left.');"
-    "           } else if (command == 'right') {"
-    "             document.write('<strong>Processing...</strong> Lightning the path to the right.');"
-    "           } else if (command == 'on') {"
-    "             document.write('<strong>Processing...</strong> Turning all the lights on.');"
-    "           } else if (command == 'off') {"
-    "             document.write('<strong>Processing...</strong> Turning all the lights off.');"
-    "           } else if (command == 'temp') {"
-    "             document.write('<strong>Processing...</strong> Coloring all the lights according to the temperature.');"
-    "           }"
-    "         document.write('</div>');"
-    "       }"
-    "     </script>"
+    "<head>"
+    "<title></title>"
+    "<meta charset=\"utf-8\">"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+    "<!-- Latest compiled and minified CSS -->"
+    "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css\" integrity=\"sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7\" crossorigin=\"anonymous\">"
+    "<!-- Optional theme -->"
+    "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css\" integrity=\"sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r\" crossorigin=\"anonymous\">"
+    "<script type=\"text/javascript\">"
+    "function getUrlVars() {"
+    "var vars = {};"
+    "var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {"
+    "vars[key] = value;"
+    "});"
+    "return vars;"
+    "}"
+    "</script>"
+    "</head>"
+    "<body>"
+    "<div class=\"container\">"
   );
 
   client.println(
-    "     <div class=\"jumbotron\">"
-    "       <h1>Arduino + Philips Hue</h1> "
-    "       <p>Click on the buttons to operate the lights.</p> "
-    "     </div>"
-    "     <div class=\"btn-group\">"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=left\">"
-    "         <span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Left"
-    "       </a>"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=right\">"
-    "         <span class=\"glyphicon glyphicon-arrow-right\" aria-hidden=\"true\"></span> Right"
-    "       </a>"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=on\">"
-    "         <span class=\"glyphicon glyphicon-lamp\" aria-hidden=\"true\"></span> Turn All On"
-    "       </a>"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=off\">"
-    "         <span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span> Turn All Off"
-    "       </a>"
-    "       <a class=\"btn btn-primary btn-lg\" href=\"?command=temp\">"
-    "         <span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature"
+    "<script type=\"text/javascript\">"
+    "var command = getUrlVars()['command'];"
+    "console.log(command);"
+    "if (command != undefined) {"
+    "document.write(`<div class=\"alert alert-info fade in\">"
+    "<a href=\"#\" class=\"close\" data-dismiss=\"alert\" aria-label=\"close\">&times;</a>`);"
+    "if (command == 'left') {"
+    "document.write('<strong>Processing...</strong> Lightning the path to the left.');"
+    "} else if (command == 'right') {"
+    "document.write('<strong>Processing...</strong> Lightning the path to the right.');"
+    "} else if (command == 'on') {"
+    "document.write('<strong>Processing...</strong> Turning all the lights on.');"
+    "} else if (command == 'off') {"
+    "document.write('<strong>Processing...</strong> Turning all the lights off.');"
+    "} else if (command == 'temp') {"
+    "document.write('<strong>Processing...</strong> Coloring all the lights according to the temperature.');"
+    "} else if (command == 'arrivedLeft') {"
+    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the left.');"
+    "} else if (command == 'arrivedRight') {"
+    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the right.');"
+    "}"
+    "document.write('</div>');"
+    "}"
+    "</script>"
+  );
+
+  client.println(
+    "<div class=\"jumbotron\">"
+    "<h1>Arduino + Philips Hue</h1> "
+    "<p>Click on the buttons to operate the lights.</p> "
+    "</div>"
+    "<div class=\"btn-group\">"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=left\">"
+    "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Left"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=right\">"
+    "<span class=\"glyphicon glyphicon-arrow-right\" aria-hidden=\"true\"></span> Right"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=on\">"
+    "<span class=\"glyphicon glyphicon-lamp\" aria-hidden=\"true\"></span> Turn All On"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=off\">"
+    "<span class=\"glyphicon glyphicon-off\" aria-hidden=\"true\"></span> Turn All Off"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=temp\">"
+    "<span class=\"glyphicon glyphicon-fire\" aria-hidden=\"true\"></span> Temperature"
   );
 
   if (httpReq.indexOf("GET /?command=temp") > -1) {
@@ -288,14 +298,20 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   }
 
   client.println(
-    "       </a>"
-    "     </div>"
-    "   </div>"
-    "   <!-- Latest (compatible) compiled and minified jQuery -->"
-    "   <script src=\"https://code.jquery.com/jquery-2.2.4.min.js\" integrity=\"sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=\" crossorigin=\"anonymous\"></script>"
-    "   <!-- Latest compiled and minified JavaScript -->"
-    "   <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js\" integrity=\"sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS\" crossorigin=\"anonymous\"></script>"
-    " </body>"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedLeft\">"
+    "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Arrived Left"
+    "</a>"
+    "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedRight\">"
+    "<span class=\"glyphicon glyphicon-arrow-right\" aria-hidden=\"true\"></span> Arrived Right"
+    "</a>"
+    "</div>"
+    "</div>"
+    "<!-- Latest (compatible) compiled and minified jQuery -->"
+    "<script src=\"https://code.jquery.com/jquery-2.2.4.min.js\" integrity=\"sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=\" crossorigin=\"anonymous\"></script>"
+    "<!-- Latest compiled and minified JavaScript -->"
+    "<script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js\" integrity=\"sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS\" crossorigin=\"anonymous\"></script>"
+    "</body>"
     "</html>"
   );
 }
