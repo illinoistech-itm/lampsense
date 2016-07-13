@@ -8,10 +8,14 @@ const char hueBridgeIP[] = "10.101.2.54"; // IP found for the Philips Hue bridge
 const char hueUsername[] = "newdeveloper";  // Developer name created when registering a user
 const int hueBridgePort = 80;
 
-const int numLamps = 5;
-const int button1 = 7;
-const int button2 = 8;
-const unsigned long int interval = 1000; // 500 ms
+const int NUM_LAMPS = 5;
+const int BUTTON1 = 7;
+const int BUTTON2 = 8;
+const unsigned long int INTERVAL = 1000; // 500 ms
+const byte SENSOR_TEMP1[] = {0x40, 0xC6, 0x74, 0xF3};
+const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
+const byte SENSOR_GAS[] = {0x40, 0xC6, 0x73, 0xE7};
+const int MAX_GAS_LEVEL = 500;
 
 String hueOn;
 int hueBri;
@@ -21,7 +25,8 @@ int path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path
 int pathLeft[] = {1, 1, 1, 0, 0};  // 1 for lamp being part of such path; 0 for not
 int pathRight[] = {1, 0, 0, 1, 1};
 int pathUsed[] = {0, 0};
-unsigned int color[numLamps]; // current color for each lamp
+unsigned int color[NUM_LAMPS]; // current color for each lamp
+unsigned int colorGas = 0;
 String command;
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
 String commandOn = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
@@ -30,8 +35,9 @@ String commandLeft = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
 String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
 const int debugLED = 13;
 int i, c;
-unsigned long int previousTime = 0xFFFFFFFF, currentTime;
+unsigned long int previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, currentTime;
 float lastValidTemp;
+boolean gasDetected = false;
 
 
 byte mac[] = {0x90, 0xA2, 0xDA, 0x0F, 0x49, 0x9A}; // Ethernet shield MAC address
@@ -48,8 +54,8 @@ SoftwareSerial xbee(2, 3); // RX, TX
 void setup() {
 
   pinMode(debugLED, OUTPUT);
-  pinMode(button1, INPUT);
-  pinMode(button2, INPUT);
+  pinMode(BUTTON1, INPUT);
+  pinMode(BUTTON2, INPUT);
   Serial.begin(9600);
   xbee.begin(9600);
   Serial.println("Ethernet.begin initializing");
@@ -69,22 +75,25 @@ void loop() {
 
 
   // Evaluate if button was pressed - Button 1 for left path, button 2 for right path
-  if (digitalRead(button1) == HIGH) {
+  if (digitalRead(BUTTON1) == HIGH) {
     deletePath(1, "\n\nPerson arrived at left side");
-  } else if (digitalRead(button2) == HIGH) {
+  } else if (digitalRead(BUTTON2) == HIGH) {
     deletePath(2, "\n\nPerson arrived at right side");
   }
 
   // Evaluate state of lamps
-  for (i = 0; i < numLamps; i++) {
+  if (gasDetected) {
+    gasToLamps();
+  }
+  for (i = 0; i < NUM_LAMPS; i++) {
     if (path[i] == 3) {
       currentTime = millis();
-      if ((previousTime + interval) < currentTime) { // need to fix for millis reseting
+      if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
         color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
         Serial.println(color[i]);
         command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(color[i]) + ",\"sat\":235}";
         setHue(i + 1, command);
-        previousTime = currentTime;
+        previousTimePath = currentTime;
       }
     }
   }
@@ -123,6 +132,7 @@ void getTemp() {
 
   byte discard, analogHigh, analogLow;
   int analogValue = 0;
+  int sender[4];
   float temp = 0;
   boolean received = false;
 
@@ -131,23 +141,49 @@ void getTemp() {
     // look for the start byte
     if (xbee.read() == 0x7E) {
       // read the variables that we're not using out of the buffer
-      for (int i = 1; i < 19 ; i++) {
-        discard = xbee.read();
-      }
+      for (i = 1; i < 8 ; i++) discard = xbee.read();
+      // address of sender (bytes from 8 to 11)
+      for (i = 8; i < 12; i++) sender[i] = xbee.read();
+      for (i = 12; i < 19; i++) discard = xbee.read();
       analogHigh = xbee.read();
       analogLow = xbee.read();
       analogValue = analogLow + (analogHigh * 256);
-      temp = analogValue / 1023.0 * 1.23;
-      temp = (temp - 0.5) / 0.01;
-      received = true;
+      analyzeMessage(sender, &analogValue);
     }
   }
-  if (received) {    
+
+}
+
+void analyzeMessage(int sender[], int* analogValue) {
+
+  float temp = 0;
+  if (sender[3] == SENSOR_TEMP1[3] || sender[3] == SENSOR_TEMP2[3]) { // SENSOR_TEMP1
+    temp = convertTemp(analogValue);
     if (temp > 0.0 || temp < 50.0) {
       lastValidTemp = temp;
     }
-    received = false;
+  } else if (sender[3] == SENSOR_GAS[3]) {
+    analyzeGasLevel(analogValue);
   }
+
+}
+
+void analyzeGasLevel(int* analogValue) {
+
+  if (*analogValue > MAX_GAS_LEVEL) {
+    gasDetected = true;
+  }
+  else gasDetected = false;
+
+}
+
+float convertTemp(int* analogValue) {
+
+  float temp = 0;
+  temp = *analogValue / 1023.0 * 1.23;
+  temp = (temp - 0.5) / 0.01;
+
+  return temp;
 
 }
 
@@ -180,12 +216,28 @@ void tempToLamp(float* temp) {
 
 }
 
+
+void gasToLamps() {
+
+  currentTime = millis();
+  if ((previousTimeGas + INTERVAL) < currentTime) { // need to fix for millis reseting
+    colorGas = 5000 - colorGas; // if color is 5000 turn it to 0 and vice versa
+    Serial.println(colorGas);
+    command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(colorGas) + ",\"sat\":235}";
+    setAllLamps(-2, command);
+    previousTimeGas = currentTime;
+  }
+  command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
+  setAllLamps(0, command);
+
+}
+
 void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 for all on (normal), 1 for left, 2 for right
 
   Serial.println(message);
   if (numPath == -1) {
     command = commandOff;
-    for (int j = 1; j < numLamps + 1; j++) {
+    for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
       path[j - 1] = -1;
       delay(50);
@@ -193,7 +245,7 @@ void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 f
   }
   else if (numPath == 0) {
     command = commandOn;
-    for (int j = 1; j < numLamps + 1; j++) {
+    for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
       path[j - 1] = 0;
       delay(50);
@@ -201,7 +253,7 @@ void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 f
   }
   else if (numPath == 1) {
     command = commandLeft;
-    for (int j = 1; j < numLamps + 1; j++) {
+    for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
       path[j - 1] = 1;
       delay(50);
@@ -209,7 +261,7 @@ void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 f
   }
   else if (numPath == 2) {
     command = commandRight;
-    for (int j = 1; j < numLamps + 1; j++) {
+    for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
       path[j - 1] = 2;
       delay(50);
@@ -225,7 +277,7 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
     if (pathUsed[0] == 1) Serial.println("Error: left path is already being used");
     else {
       pathUsed[0] = 1;    // change - left path being used
-      for (int j = 1; j < numLamps + 1; j++) {
+      for (int j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathLeft[j - 1] == 1) {
           setHue(j, commandLeft);
           path[j - 1] = path[j - 1] + addedPath;
@@ -239,7 +291,7 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
     if (pathUsed[1] == 1) Serial.println("Error: right path is already being used");
     else {
       pathUsed[1] = 1;    // change - right path being used
-      for (int j = 1; j < numLamps + 1; j++) {
+      for (int j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathRight[j - 1] == 1) {
           setHue(j, commandRight);
           path[j - 1] = path[j - 1] + addedPath;
@@ -260,7 +312,7 @@ void deletePath(int modifiedPath, String message) {  // modifiedPath: 1 for left
     if (pathUsed[0] == 0) Serial.println("Error: left path is not being used");
     else {
       pathUsed[0] = 0;
-      for (int j = 1; j < numLamps + 1; j++) {
+      for (int j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathLeft[j - 1] == 1) {
           if (path[j - 1] == 3) setHue(j, commandRight);
           else setHue(j, commandOn);
@@ -274,7 +326,7 @@ void deletePath(int modifiedPath, String message) {  // modifiedPath: 1 for left
     if (pathUsed[1] == 0) Serial.println("Error: right path is not being used");
     else {
       pathUsed[1] = 0;
-      for (int j = 1; j < numLamps + 1; j++) {
+      for (int j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathRight[j - 1] == 1) {
           if (path[j - 1] == 3) setHue(j, commandLeft);
           else setHue(j, commandOn);

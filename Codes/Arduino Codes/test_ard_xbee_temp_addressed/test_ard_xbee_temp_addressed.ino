@@ -40,8 +40,8 @@ void loop() {
     }
   }
   if (received) {
-    Serial.print("Sender address: ");
-    for(int i=0; i<4; i++) Serial.print(sender[i]);
+    Serial.print("\nSender address: ");
+    for(int i=0; i<4; i++){ Serial.print(sender[i], HEX); Serial.print(" "); }
     Serial.print("\nValue received: ");
     Serial.print(analogValue);
     Serial.print(" = ");
