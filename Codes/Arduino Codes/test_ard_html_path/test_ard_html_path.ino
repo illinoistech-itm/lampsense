@@ -1,66 +1,88 @@
+/* ==============================================================================
+
+    Project: Intelligent Lights and Sensor Node using XBees
+
+    Description:
+
+    Circuit:
+
+    Created:
+    By Andreive Giovanini Silva, Breno Soares Martis, Pedro Gualdi
+
+    URL: github
+
+  ============================================================================== */
+
+/* Libraries */
 #include <SPI.h>
 #include <Ethernet.h>
 #include <SoftwareSerial.h>
 
-// Ethernet variables
+/* Function declarations */
+
+/* Ethernet variables */
+// Arduino Parameters
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // MAC address from Ethernet shield sticker under board
 IPAddress ip(192, 168, 1, 252); // IP address, may need to change depending on network
-// IPAddress ip(10, 101, 2, 252); // IP address of the computer lab network
 EthernetServer server(80); // create a server at port 80
-
 // Database connection variables
 IPAddress serverDB(192, 168, 1, 153);
 EthernetClient clientDB;
 
-// Hue variables
+/* Constant variables */
+// Philips Hue variables
 const char hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
-// const char hueBridgeIP[] = "10.101.2.54"; // IP address of the computer lab network
 const char hueUsername[] = "newdeveloper";  // Developer name created when registering a user
 const int hueBridgePort = 80;
-
-const int NUM_LAMPS = 5;
-const int BUTTON1 = 7;
-const int BUTTON2 = 8;
-const unsigned long int INTERVAL = 1000, INTERVAL_DB = 5000;
+// Constant identifiers
 const byte SENSOR_TEMP1[] = {0x40, 0xC6, 0x74, 0xF3};
 const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
 const byte SENSOR_GAS[] = {0x40, 0xC6, 0x73, 0xE7};
+// Constant parameters
+const int NUM_LAMPS = 5;
+const int BUTTON1 = 7;
+const int BUTTON2 = 8;
+const int DEBUG_LED = 13;
+const unsigned long int INTERVAL = 1000, INTERVAL_DB = 5000;
 const int MAX_GAS_LEVEL = 500;
+// Constant strings
+// String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
+const String commandOn = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
+const String commandOff = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
+const String commandLeft = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
+const String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
+// Constants for paths: 1 for lamp being part of such path, 0 for not
+const int pathLeft[] = {1, 0, 0, 1, 1}; 
+const int pathRight[] = {1, 1, 1, 0, 0};
 
-String hueOn;
-int hueBri;
-long hueHue;
-int hueSat;
+/* Global variables */
 int path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path; 2: right path; 3: left and right paths (sum)
-int pathLeft[] = {1, 0, 0, 1, 1}; // 1 for lamp being part of such path; 0 for not
-int pathRight[] = {1, 1, 1, 0, 0};
 int pathUsed[] = {0, 0};
 unsigned int color[NUM_LAMPS]; // current color for each lamp
 unsigned int colorGas = 0;
 String command;
-// String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
-String commandOn = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-String commandOff = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-String commandLeft = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
-String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
-const int debugLED = 13;
 int i, cmd;
 unsigned long int previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, currentTime;
 float lastValidTemp;
 boolean gasDetected = false;
 
-// Initialize the Ethernet server library
+/* Initialize the Ethernet server library */
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
 EthernetClient clientB;
 
+/* Initialize SoftwareSerial ports */
 SoftwareSerial xbee(12, 13); // RX, TX
 
+/* Setup function */
 void setup() {
-  pinMode(debugLED, OUTPUT);
+
+  // Initialize pins
+  pinMode(DEBUG_LED, OUTPUT);
   pinMode(BUTTON1, INPUT);
   pinMode(BUTTON2, INPUT);
 
+  // Initialize Serial services
   Serial.begin(9600);
   xbee.begin(9600);
   Serial.println("Ethernet.begin initializing");
@@ -69,9 +91,12 @@ void setup() {
   Serial.println("Ethernet.begin executado");
   delay(1000);
   Serial.println("Ready for commands");
+  
 }
 
+/* Loop main function */
 void loop() {
+  
   String httpReq; // stores the HTTP request
   EthernetClient client = server.available(); // try to get client
 
