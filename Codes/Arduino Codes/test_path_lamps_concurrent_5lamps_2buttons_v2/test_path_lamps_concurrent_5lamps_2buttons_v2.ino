@@ -85,15 +85,17 @@ void loop() {
   if (gasDetected) {
     gasToLamps();
   }
-  for (i = 0; i < NUM_LAMPS; i++) {
-    if (path[i] == 3) {
-      currentTime = millis();
-      if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
-        color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
-        Serial.println(color[i]);
-        command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(color[i]) + ",\"sat\":235}";
-        setHue(i + 1, command);
-        previousTimePath = currentTime;
+  else {
+    for (i = 0; i < NUM_LAMPS; i++) {
+      if (path[i] == 3) {
+        currentTime = millis();
+        if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
+          color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
+          Serial.println(color[i]);
+          command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(color[i]) + ",\"sat\":235}";
+          setHue(i + 1, command);
+          previousTimePath = currentTime;
+        }
       }
     }
   }
