@@ -7,37 +7,45 @@
     Circuit:
 
     Created:
-    By Andreive Giovanini Silva, Breno Soares Martis, Pedro Gualdi
+    By Andreive Giovanini Silva, Breno Soares Martis, Pedro Henrique Gualdi
 
     URL: github
 
-  ============================================================================== */
+============================================================================== */
+
 
 /* Libraries */
 #include <SPI.h>
 #include <Ethernet.h>
 #include <SoftwareSerial.h>
 
+
 /* Function declarations */
 
 /* Ethernet variables */
+
 // Arduino Parameters
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // MAC address from Ethernet shield sticker under board
 IPAddress ip(192, 168, 1, 252); // IP address, may need to change depending on network
 EthernetServer server(80); // create a server at port 80
+
 // Database connection variables
 IPAddress serverDB(192, 168, 1, 153);
 EthernetClient clientDB;
 
+
 /* Constant variables */
+
 // Philips Hue variables
 const char hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
 const char hueUsername[] = "newdeveloper";  // Developer name created when registering a user
 const int hueBridgePort = 80;
+
 // Constant identifiers
 const byte SENSOR_TEMP1[] = {0x40, 0xC6, 0x74, 0xF3};
 const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
 const byte SENSOR_GAS[] = {0x40, 0xC6, 0x73, 0xE7};
+
 // Constant parameters
 const int NUM_LAMPS = 5;
 const int BUTTON1 = 7;
@@ -45,15 +53,18 @@ const int BUTTON2 = 8;
 const int DEBUG_LED = 13;
 const unsigned long int INTERVAL = 1000, INTERVAL_DB = 5000;
 const int MAX_GAS_LEVEL = 500;
+
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
 const String commandOn = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
 const String commandOff = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
 const String commandLeft = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
 const String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
+
 // Constants for paths: 1 for lamp being part of such path, 0 for not
 const int pathLeft[] = {1, 0, 0, 1, 1}; 
 const int pathRight[] = {1, 1, 1, 0, 0};
+
 
 /* Global variables */
 int path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path; 2: right path; 3: left and right paths (sum)
@@ -66,13 +77,16 @@ unsigned long int previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, c
 float lastValidTemp;
 boolean gasDetected = false;
 
+
 /* Initialize the Ethernet server library */
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
 EthernetClient clientB;
 
+
 /* Initialize SoftwareSerial ports */
 SoftwareSerial xbee(12, 13); // RX, TX
+
 
 /* Setup function */
 void setup() {
@@ -94,7 +108,10 @@ void setup() {
   
 }
 
-/* Loop main function */
+
+/* ==============================================================================
+ *  Loop main function
+============================================================================== */
 void loop() {
   
   String httpReq; // stores the HTTP request
@@ -204,6 +221,9 @@ void loop() {
   }
 }
 
+/* ==============================================================================
+ *  Auxiliary functions
+============================================================================== */
 // Connect and send an HTTP request to the database
 void connect() {
   if (clientDB.connect(serverDB, 8081)) {
