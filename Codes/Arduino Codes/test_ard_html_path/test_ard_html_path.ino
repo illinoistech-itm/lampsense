@@ -37,9 +37,9 @@ EthernetClient clientDB;
 /* Constant variables */
 
 // Philips Hue variables
-const char hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
-const char hueUsername[] = "newdeveloper";  // Developer name created when registering a user
-const int hueBridgePort = 80;
+const char    hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
+const char    hueUsername[] = "newdeveloper";  // Developer name created when registering a user
+const uint8_t hueBridgePort = 80;
 
 // Constant identifiers
 const byte SENSOR_TEMP1[] = {0x40, 0xC6, 0x74, 0xF3};
@@ -47,12 +47,12 @@ const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
 const byte SENSOR_GAS[] = {0x40, 0xC6, 0x73, 0xE7};
 
 // Constant parameters
-const int NUM_LAMPS = 5;
-const int BUTTON1 = 7;
-const int BUTTON2 = 8;
-const int DEBUG_LED = 13;
-const unsigned long int INTERVAL = 1000, INTERVAL_DB = 5000;
-const int MAX_GAS_LEVEL = 500;
+const uint8_t  NUM_LAMPS = 5;
+const uint8_t  BUTTON1 = 7;
+const uint8_t  BUTTON2 = 8;
+const uint8_t  DEBUG_LED = 13;
+const uint64_t INTERVAL = 1000, INTERVAL_DB = 5000;
+const uint16_t MAX_GAS_LEVEL = 500;
 
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
@@ -62,18 +62,19 @@ const String commandLeft = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":23
 const String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
 
 // Constants for paths: 1 for lamp being part of such path, 0 for not
-const int pathLeft[] = {1, 0, 0, 1, 1}; 
-const int pathRight[] = {1, 1, 1, 0, 0};
+const uint8_t pathLeft[]  = {1, 0, 0, 1, 1}; 
+const uint8_t pathRight[] = {1, 1, 1, 0, 0};
 
 
 /* Global variables */
-int path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path; 2: right path; 3: left and right paths (sum)
-int pathUsed[] = {0, 0};
-unsigned int color[NUM_LAMPS]; // current color for each lamp
-unsigned int colorGas = 0;
+int8_t path[] = {0, 0, 0, 0, 0}; // -1: off, 0: on for normal lighting 1: left path; 2: right path; 3: left and right paths (sum)
+int8_t pathUsed[] = {0, 0};
+uint32_t color[NUM_LAMPS]; // current color for each lamp
+uint32_t colorGas = 0;
 String command;
-int i, cmd;
-unsigned long int previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, currentTime;
+uint8_t i;
+char cmd;
+uint64_t previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, currentTime;
 float lastValidTemp;
 boolean gasDetected = false;
 
@@ -373,8 +374,8 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
 void getTemp() {
 
   byte discard, analogHigh, analogLow;
-  int analogValue = 0;
-  int sender[4];
+  uint16_t analogValue = 0;
+  uint8_t sender[4];
   float temp = 0;
   boolean received = false;
 
@@ -396,7 +397,7 @@ void getTemp() {
 
 }
 
-void analyzeMessage(int sender[], int* analogValue) {
+void analyzeMessage(uint8_t sender[], uint16_t* analogValue) {
 
   float temp = 0;
   if (sender[3] == SENSOR_TEMP1[3] || sender[3] == SENSOR_TEMP2[3]) { // SENSOR_TEMP1
@@ -410,7 +411,7 @@ void analyzeMessage(int sender[], int* analogValue) {
 
 }
 
-void analyzeGasLevel(int* analogValue) {
+void analyzeGasLevel(uint16_t* analogValue) {
 
   if (*analogValue > MAX_GAS_LEVEL) {
     gasDetected = true;
@@ -419,7 +420,7 @@ void analyzeGasLevel(int* analogValue) {
 
 }
 
-float convertTemp(int* analogValue) {
+float convertTemp(uint16_t* analogValue) {
 
   float temp = 0;
   temp = *analogValue / 1023.0 * 1.23;
@@ -430,6 +431,7 @@ float convertTemp(int* analogValue) {
 }
 
 void showTemp() {
+  
   Serial.print("Temperature: ");
   Serial.print(lastValidTemp);
   Serial.println(" ºC");
@@ -437,10 +439,12 @@ void showTemp() {
   delay(3000);
   setAllLamps(0, commandOn);
   pathUsed[0] = pathUsed[1] = 0;
+
 }
 
 // Color the lamps according to the temperature
 void tempToLamp(float* temp) {
+
   if (*temp < 15.0) {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 55000,\"sat\":235}";
     setAllLamps(-2, command);
@@ -457,6 +461,7 @@ void tempToLamp(float* temp) {
     command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
     setAllLamps(-2, command);
   }
+
 }
 
 void gasToLamps() {
@@ -474,7 +479,7 @@ void gasToLamps() {
 
 }
 
-void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 for all on (normal), 1 for left, 2 for right
+void setAllLamps(uint8_t numPath, String message) {  // numPath: -1 for all off, 0 for all on (normal), 1 for left, 2 for right
   Serial.println(message);
 
   if (numPath == -1) {
@@ -530,11 +535,13 @@ void setAllLamps(int numPath, String message) {  // numPath: -1 for all off, 0 f
   }
 }
 
-void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for right
+void addPath(uint8_t addedPath, String message) {  // addedPath: 1 for left, 2 for right
+
+  uint8_t j;
   Serial.println(message);
 
   // If the lamps are turned off, set their values to 0, so that the sum works accurately
-  for (int j = 1; j < NUM_LAMPS + 1; j++) {
+  for (j = 1; j < NUM_LAMPS + 1; j++) {
     if (path[j - 1] == -1) {
       path[j - 1] = 0;
     }
@@ -546,7 +553,7 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
     } else {
       pathUsed[0] = 1; // change - left path being used
 
-      for (int j = 1; j < NUM_LAMPS + 1; j++) {
+      for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathLeft[j - 1] == 1) {
           setHue(j, commandLeft);
           path[j - 1] = path[j - 1] + addedPath;
@@ -561,7 +568,7 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
     } else {
       pathUsed[1] = 1; // change - right path being used
 
-      for (int j = 1; j < NUM_LAMPS + 1; j++) {
+      for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathRight[j - 1] == 1) {
           setHue(j, commandRight);
           path[j - 1] = path[j - 1] + addedPath;
@@ -573,9 +580,13 @@ void addPath(int addedPath, String message) {  // addedPath: 1 for left, 2 for r
   } else {
     Serial.println("Error in addPath function");
   }
+
 }
 
 void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left, 2 for right
+
+  uint8_t j;
+  
   Serial.println(message);
 
   if (modifiedPath == 1) { // left case
@@ -584,7 +595,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
     } else {
       pathUsed[0] = 0;
 
-      for (int j = 1; j < NUM_LAMPS + 1; j++) {
+      for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathLeft[j - 1] == 1) {
           if (path[j - 1] == 3) {
             setHue(j, commandRight);
@@ -603,7 +614,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
     } else {
       pathUsed[1] = 0;
 
-      for (int j = 1; j < NUM_LAMPS + 1; j++) {
+      for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathRight[j - 1] == 1) {
           if (path[j - 1] == 3) {
             setHue(j, commandLeft);
@@ -619,9 +630,11 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
   } else {
     Serial.println("Error in deletePath function");
   }
+
 }
 
-boolean setHue(int lightNum, String command) {
+boolean setHue(uint8_t lightNum, String command) {
+
   if (clientB.connect(hueBridgeIP, hueBridgePort)) {
     if (clientB.connected()) {
       clientB.print("PUT /api/");
@@ -647,69 +660,7 @@ boolean setHue(int lightNum, String command) {
     Serial.println("setHue() - Command failed");
     return false;
   }
+
 }
 
-// boolean getHue(int lightNum) {
-//   if (clientB.connect(hueBridgeIP, hueBridgePort))
-//   {
-//     clientB.print("GET /api/");
-//     clientB.print(hueUsername);
-//     clientB.print("/lights/");
-//     clientB.print(lightNum);
-//     clientB.println(" HTTP/1.1");
-//     clientB.print("Host: ");
-//     clientB.println(hueBridgeIP);
-//     clientB.println("Content-type: application/json");
-//     clientB.println("keep-alive");
-//     clientB.println();
-//     while (clientB.connected())
-//     {
-//       if (clientB.available())
-//       {
-//         //read the current bri, hue, sat, and whether the light is on or off
-//         clientB.findUntil("\"on\":", '\0');
-//         hueOn = (clientB.readStringUntil(','));
 
-//         clientB.findUntil("\"bri\":", '\0');
-//         hueBri = clientB.readStringUntil(',').toInt();
-
-//         clientB.findUntil("\"hue\":", '\0');
-//         hueHue = clientB.readStringUntil(',').toInt();
-
-//         clientB.findUntil("\"sat\":", '\0');
-//         hueSat = clientB.readStringUntil(',').toInt();
-//         break;
-//       }
-//     }
-//     clientB.stop();
-//     return true;
-//   }
-//   else
-//     Serial.println("getHue() - Command failed");
-//   return false;
-// }
-
-// void getPreviousState() {
-//   Serial.println("\n\nReading current state");
-//   getHue(1);
-//   delay(10);
-//   getMessagesDebug("Light 1 - on: ");
-//   getHue(2);
-//   delay(10);
-//   getMessagesDebug("Light 2 - on: ");
-//   getHue(3);
-//   delay(10);
-//   getMessagesDebug("Light 3 - on: ");
-// }
-
-// void getMessagesDebug(String message) {
-//   Serial.print(message);
-//   Serial.print(hueOn);
-//   Serial.print(", hueBri: ");
-//   Serial.print(hueBri);
-//   Serial.print(", hueHue: ");
-//   Serial.print(hueHue);
-//   Serial.print(", hueSat: ");
-//   Serial.print(hueSat);
-//   Serial.println();
-// }
