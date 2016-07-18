@@ -95,7 +95,9 @@ EthernetClient clientB;
 SoftwareSerial xbee(12, 13); // RX, TX
 
 
-/* Setup function */
+/* ==============================================================================
+    Setup function
+  ============================================================================== */
 void setup() {
 
   // Initialize pins
@@ -184,7 +186,7 @@ void loop() {
   }
   else {
     for (i = 0; i < NUM_LAMPS; i++) {
-      if (path[i] == 6) {
+      if (path[i] == LAMP_BOTH) {
         currentTime = millis();
         if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
           color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
@@ -588,7 +590,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
 
   Serial.println(message);
 
-  if (modifiedPath == 1) { // left case
+  if (modifiedPath == LAMP_LEFT) { // left case
     if (pathUsed[0] == false) {
       Serial.println("Error: left path is not being used");
     } else {
@@ -607,7 +609,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
         }
       }
     }
-  } else if (modifiedPath == 2) { // right case
+  } else if (modifiedPath == LAMP_RIGHT) { // right case
     if (pathUsed[1] == false) {
       Serial.println("Error: right path is not being used");
     } else {
