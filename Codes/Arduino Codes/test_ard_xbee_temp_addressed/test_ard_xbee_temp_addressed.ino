@@ -8,7 +8,7 @@ boolean received = false;
 float temp = 0;
 byte sender[4];
 
-SoftwareSerial xbee(2, 3);
+SoftwareSerial xbee(12, 13);
 
 void setup() {
   pinMode(debugLED, OUTPUT);
