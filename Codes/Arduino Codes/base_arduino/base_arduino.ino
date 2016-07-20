@@ -50,13 +50,13 @@ const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
 const byte SENSOR_GAS[]   = {0x40, 0xC6, 0x73, 0xE7};
 // Constant parameters
 const uint64_t INTERVAL = 1000, INTERVAL_DB = 5000;
-const uint16_t MAX_GAS_LEVEL = 500;
+const uint16_t MAX_GAS_LEVEL = 100;
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
-const char commandOn[]    = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-const char commandOff[]   = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-const char commandLeft[]  = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
-const char commandRight[] = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
+const char commandOn[]    = "{\"on\": true,\"bri\": 80,\"hue\": 0,\"sat\":0}";
+const char commandOff[]   = "{\"on\": false,\"bri\": 80,\"hue\": 0,\"sat\":0}";
+const char commandLeft[]  = "{\"on\": true,\"bri\": 80,\"hue\": 20000,\"sat\":235}";
+const char commandRight[] = "{\"on\": true,\"bri\": 80,\"hue\": 50000,\"sat\":235}";
 // Constants for paths: 1 for lamp being part of such path, 0 for not
 const uint8_t pathLeft[NUM_LAMPS]  = {1, 0, 0, 1, 1, 1};
 const uint8_t pathRight[NUM_LAMPS] = {1, 1, 1, 0, 0, 0};
@@ -157,7 +157,7 @@ void loop() {
 
   // Evaluate state of lamps
   if (gasDetected) {
-    Serial.println("gasDetected");
+    // Serial.println("gasDetected");
     gasToLamps();
   }
   else {
@@ -167,7 +167,7 @@ void loop() {
         if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
           color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
           Serial.println(color[i]);
-          command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(color[i]) + ",\"sat\":235}";
+          command = "{\"on\": true,\"bri\": 80,\"hue\": " + String(color[i]) + ",\"sat\":235}";
           setHue(i + 1, command);
           previousTimePath = currentTime;
         }
@@ -204,11 +204,11 @@ void loop() {
   getSensorData();
 
   // Send the temperature via GET every X (INTERVAL_DB) milliseconds
-  currentTime = millis();
-  if ((previousTimeDB + INTERVAL_DB) < currentTime) {
+  /*currentTime = millis();
+    if ((previousTimeDB + INTERVAL_DB) < currentTime) {
     sendTempViaGet();
     previousTimeDB = currentTime;
-  }
+    }*/
 }
 
 // Connect and send an HTTP request to the database
@@ -400,8 +400,12 @@ void analyzeMessage(byte sender[], int* analogValue) {
 
 void analyzeGasLevel(int* analogValue) {
 
+  Serial.print("gas value: "); Serial.println(*analogValue);
   if (*analogValue > MAX_GAS_LEVEL) {
     gasDetected = true;
+  } else if ((*analogValue < MAX_GAS_LEVEL) && gasDetected) {
+    setAllLamps(LAMP_ON, "No more gas");
+    gasDetected = false;
   }
   else gasDetected = false;
 
@@ -451,7 +455,7 @@ void gasToLamps() {
 
   currentTime = millis();
   if ((previousTimeGas + INTERVAL) < currentTime) { // need to fix for millis reseting
-    colorGas = 5000 - colorGas; // if color is 5000 turn it to 0 and vice versa
+    colorGas = 10000 - colorGas; // if color is 5000 turn it to 0 and vice versa
     Serial.println(colorGas);
     command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(colorGas) + ",\"sat\":235}";
     setAllLamps(-2, command);
