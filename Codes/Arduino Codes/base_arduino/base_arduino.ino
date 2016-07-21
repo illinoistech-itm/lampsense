@@ -342,10 +342,10 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   client.println(
     "</a>"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedLeft\">"
-    "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Arrived Left"
+    "<span class=\"glyphicon glyphicon-triangle-left\" aria-hidden=\"true\"></span> Arrived Left"
     "</a>"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedRight\">"
-    "<span class=\"glyphicon glyphicon-arrow-right\" aria-hidden=\"true\"></span> Arrived Right"
+    "<span class=\"glyphicon glyphicon-triangle-right\" aria-hidden=\"true\"></span> Arrived Right"
     "</a>"
     "</div>"
     "</div>"
