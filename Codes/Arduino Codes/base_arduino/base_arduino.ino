@@ -300,11 +300,11 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
     "} else if (command == 'off') {"
     "document.write('<strong>Processing...</strong> Turning all the lights off.');"
     "} else if (command == 'temp') {"
-    "document.write('<strong>Processing...</strong> Coloring all the lights according to the temperature.');"
+    "document.write('<strong>Processing...</strong> Coloring the lights according to the temperature.');"
     "} else if (command == 'arrivedLeft') {"
-    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the left.');"
+    "document.write('<strong>Processing...</strong> Resetting the lights in the path to the left.');"
     "} else if (command == 'arrivedRight') {"
-    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the right.');"
+    "document.write('<strong>Processing...</strong> Resetting the lights in the path to the right.');"
     "}"
     "document.write('</div>');"
     "}"
@@ -312,11 +312,11 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   );
 
   client.println(
-    "<div class=\"jumbotron\">"
-    "<h1>Arduino + Philips Hue</h1> "
-    "<p>Click on the buttons to operate the lights.</p> "
+    "<div class=\"jumbotron text-center\">"
+    "<h1>LampSense</h1>"
     "</div>"
-    "<div class=\"btn-group\">"
+    "<div class=\"text-center\">"
+    "<div class=\"btn-group-vertical\">"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=left\">"
     "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Left"
     "</a>"
@@ -347,6 +347,7 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedRight\">"
     "<span class=\"glyphicon glyphicon-triangle-right\" aria-hidden=\"true\"></span> Arrived Right"
     "</a>"
+    "</div>"
     "</div>"
     "</div>"
     "<!-- Latest (compatible) compiled and minified jQuery -->"
@@ -640,4 +641,3 @@ boolean setHue(int lightNum, String command) {
     return false;
   }
 }
-
