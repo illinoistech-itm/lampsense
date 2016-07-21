@@ -53,10 +53,10 @@ const uint64_t INTERVAL = 1000, INTERVAL_DB = 5000;
 const uint16_t MAX_GAS_LEVEL = 100;
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
-const char commandOn[]    = "{\"on\": true,\"bri\": 80,\"hue\": 0,\"sat\":0}";
-const char commandOff[]   = "{\"on\": false,\"bri\": 80,\"hue\": 0,\"sat\":0}";
-const char commandLeft[]  = "{\"on\": true,\"bri\": 80,\"hue\": 20000,\"sat\":235}";
-const char commandRight[] = "{\"on\": true,\"bri\": 80,\"hue\": 50000,\"sat\":235}";
+const char commandOn[]    = "{\"on\": true,\"bri\": 40,\"hue\": 0,\"sat\":0}";
+const char commandOff[]   = "{\"on\": false,\"bri\": 40,\"hue\": 0,\"sat\":0}";
+const char commandLeft[]  = "{\"on\": true,\"bri\": 40,\"hue\": 20000,\"sat\":235}";
+const char commandRight[] = "{\"on\": true,\"bri\": 40,\"hue\": 50000,\"sat\":235}";
 // Constants for paths: 1 for lamp being part of such path, 0 for not
 const uint8_t pathLeft[NUM_LAMPS]  = {1, 0, 0, 1, 1, 1};
 const uint8_t pathRight[NUM_LAMPS] = {1, 1, 1, 0, 0, 0};
@@ -167,7 +167,7 @@ void loop() {
         if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
           color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
           Serial.println(color[i]);
-          command = "{\"on\": true,\"bri\": 80,\"hue\": " + String(color[i]) + ",\"sat\":235}";
+          command = "{\"on\": true,\"bri\": 40,\"hue\": " + String(color[i]) + ",\"sat\":235}";
           setHue(i + 1, command);
           previousTimePath = currentTime;
         }
@@ -185,7 +185,7 @@ void loop() {
       //getPreviousState();
       addPath(LAMP_LEFT, "Going to left <--");
     } else if (cmd == 'R' || cmd == 'r') {
-      //getPreviousState();
+      //getPreviousState();f
       addPath(LAMP_RIGHT, "Going to right -->");
     } else if (cmd == 'N' || cmd == 'n') {
       //getPreviousState();
@@ -435,19 +435,19 @@ void showTemp() {
 // Color the lamps according to the temperature
 void tempToLamp(float* temp) {
   if (*temp < 15.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 55000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 55000,\"sat\":235}";
     setAllLamps(-2, command);
   } else if (*temp < 20.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 42000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 42000,\"sat\":235}";
     setAllLamps(-2, command);
   } else if (*temp < 25.0) {
-    command = "{\"on\": true,\"bri\": 100,\"hue\": 35000,\"sat\":255}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 35000,\"sat\":255}";
     setAllLamps(-2, command);
   } else if (*temp < 30.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 10000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 10000,\"sat\":235}";
     setAllLamps(-2, command);
   } else {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 5000,\"sat\":235}";
     setAllLamps(-2, command);
   }
 }
@@ -458,7 +458,7 @@ void gasToLamps() {
   if ((previousTimeGas + INTERVAL) < currentTime) { // need to fix for millis reseting
     colorGas = 10000 - colorGas; // if color is 5000 turn it to 0 and vice versa
     Serial.println(colorGas);
-    command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(colorGas) + ",\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": " + String(colorGas) + ",\"sat\":235}";
     setAllLamps(-2, command);
     previousTimeGas = currentTime;
   }
