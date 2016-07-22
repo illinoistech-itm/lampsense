@@ -53,10 +53,10 @@ const uint64_t INTERVAL = 1000, INTERVAL_DB = 5000;
 const uint16_t MAX_GAS_LEVEL = 100;
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
-const char commandOn[]    = "{\"on\": true,\"bri\": 80,\"hue\": 0,\"sat\":0}";
-const char commandOff[]   = "{\"on\": false,\"bri\": 80,\"hue\": 0,\"sat\":0}";
-const char commandLeft[]  = "{\"on\": true,\"bri\": 80,\"hue\": 20000,\"sat\":235}";
-const char commandRight[] = "{\"on\": true,\"bri\": 80,\"hue\": 50000,\"sat\":235}";
+const char commandOn[]    = "{\"on\": true,\"bri\": 40,\"hue\": 0,\"sat\":0}";
+const char commandOff[]   = "{\"on\": false,\"bri\": 40,\"hue\": 0,\"sat\":0}";
+const char commandLeft[]  = "{\"on\": true,\"bri\": 40,\"hue\": 20000,\"sat\":235}";
+const char commandRight[] = "{\"on\": true,\"bri\": 40,\"hue\": 50000,\"sat\":235}";
 // Constants for paths: 1 for lamp being part of such path, 0 for not
 const uint8_t pathLeft[NUM_LAMPS]  = {1, 0, 0, 1, 1, 1};
 const uint8_t pathRight[NUM_LAMPS] = {1, 1, 1, 0, 0, 0};
@@ -167,7 +167,7 @@ void loop() {
         if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
           color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
           Serial.println(color[i]);
-          command = "{\"on\": true,\"bri\": 80,\"hue\": " + String(color[i]) + ",\"sat\":235}";
+          command = "{\"on\": true,\"bri\": 40,\"hue\": " + String(color[i]) + ",\"sat\":235}";
           setHue(i + 1, command);
           previousTimePath = currentTime;
         }
@@ -185,7 +185,7 @@ void loop() {
       //getPreviousState();
       addPath(LAMP_LEFT, "Going to left <--");
     } else if (cmd == 'R' || cmd == 'r') {
-      //getPreviousState();
+      //getPreviousState();f
       addPath(LAMP_RIGHT, "Going to right -->");
     } else if (cmd == 'N' || cmd == 'n') {
       //getPreviousState();
@@ -292,19 +292,19 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
     "document.write(`<div class=\"alert alert-info fade in\">"
     "<a href=\"#\" class=\"close\" data-dismiss=\"alert\" aria-label=\"close\">&times;</a>`);"
     "if (command == 'left') {"
-    "document.write('<strong>Processing...</strong> Lightning the path to the left.');"
+    "document.write('<strong>Processing...</strong> Lighting up the path to the left.');"
     "} else if (command == 'right') {"
-    "document.write('<strong>Processing...</strong> Lightning the path to the right.');"
+    "document.write('<strong>Processing...</strong> Lighting up the path to the right.');"
     "} else if (command == 'on') {"
     "document.write('<strong>Processing...</strong> Turning all the lights on.');"
     "} else if (command == 'off') {"
     "document.write('<strong>Processing...</strong> Turning all the lights off.');"
     "} else if (command == 'temp') {"
-    "document.write('<strong>Processing...</strong> Coloring all the lights according to the temperature.');"
+    "document.write('<strong>Processing...</strong> Coloring the lights according to the temperature.');"
     "} else if (command == 'arrivedLeft') {"
-    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the left.');"
+    "document.write('<strong>Processing...</strong> Resetting the lights in the path to the left.');"
     "} else if (command == 'arrivedRight') {"
-    "document.write('<strong>Processing...</strong> Resetting all the lights in the path to the right.');"
+    "document.write('<strong>Processing...</strong> Resetting the lights in the path to the right.');"
     "}"
     "document.write('</div>');"
     "}"
@@ -312,11 +312,11 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   );
 
   client.println(
-    "<div class=\"jumbotron\">"
-    "<h1>Arduino + Philips Hue</h1> "
-    "<p>Click on the buttons to operate the lights.</p> "
+    "<div class=\"jumbotron text-center\">"
+    "<h1>LampSense</h1>"
     "</div>"
-    "<div class=\"btn-group\">"
+    "<div class=\"text-center\">"
+    "<div class=\"btn-group-vertical\">"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=left\">"
     "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Left"
     "</a>"
@@ -342,11 +342,12 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
   client.println(
     "</a>"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedLeft\">"
-    "<span class=\"glyphicon glyphicon-arrow-left\" aria-hidden=\"true\"></span> Arrived Left"
+    "<span class=\"glyphicon glyphicon-triangle-left\" aria-hidden=\"true\"></span> Arrived Left"
     "</a>"
     "<a class=\"btn btn-primary btn-lg\" href=\"?command=arrivedRight\">"
-    "<span class=\"glyphicon glyphicon-arrow-right\" aria-hidden=\"true\"></span> Arrived Right"
+    "<span class=\"glyphicon glyphicon-triangle-right\" aria-hidden=\"true\"></span> Arrived Right"
     "</a>"
+    "</div>"
     "</div>"
     "</div>"
     "<!-- Latest (compatible) compiled and minified jQuery -->"
@@ -434,19 +435,19 @@ void showTemp() {
 // Color the lamps according to the temperature
 void tempToLamp(float* temp) {
   if (*temp < 15.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 55000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 55000,\"sat\":235}";
     setAllLamps(-2, command);
   } else if (*temp < 20.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 42000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 42000,\"sat\":235}";
     setAllLamps(-2, command);
   } else if (*temp < 25.0) {
-    command = "{\"on\": true,\"bri\": 100,\"hue\": 35000,\"sat\":255}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 35000,\"sat\":255}";
     setAllLamps(-2, command);
   } else if (*temp < 30.0) {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 10000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 10000,\"sat\":235}";
     setAllLamps(-2, command);
   } else {
-    command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": 5000,\"sat\":235}";
     setAllLamps(-2, command);
   }
 }
@@ -457,7 +458,7 @@ void gasToLamps() {
   if ((previousTimeGas + INTERVAL) < currentTime) { // need to fix for millis reseting
     colorGas = 10000 - colorGas; // if color is 5000 turn it to 0 and vice versa
     Serial.println(colorGas);
-    command = "{\"on\": true,\"bri\": 215,\"hue\": " + String(colorGas) + ",\"sat\":235}";
+    command = "{\"on\": true,\"bri\": 40,\"hue\": " + String(colorGas) + ",\"sat\":235}";
     setAllLamps(-2, command);
     previousTimeGas = currentTime;
   }
@@ -640,4 +641,3 @@ boolean setHue(int lightNum, String command) {
     return false;
   }
 }
-
