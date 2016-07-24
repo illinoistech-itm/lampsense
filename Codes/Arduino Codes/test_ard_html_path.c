@@ -1,19 +1,18 @@
-/*
-  ==============================================================================
+/* ==============================================================================
 
-    Project: Intelligent Lights and Sensor Node Using XBees
+    Project: Intelligent Lights and Sensor Node using XBees
 
     Description:
 
     Circuit:
 
-    Created by:
-    Andreive Giovanini Silva, Breno Soares Martins, Pedro Henrique Gualdi
+    Created:
+    By Andreive Giovanini Silva, Breno Soares Martis, Pedro Henrique Gualdi
 
-    URL: https://github.com/Illinois-tech-ITM/BSMP-2016-Intelligent-Lights
+    URL: github
 
-  ==============================================================================
-*/
+============================================================================== */
+
 
 /* Libraries */
 #include <SPI.h>
@@ -34,6 +33,18 @@ EthernetServer server(80); // create a server at port 80
 IPAddress serverDB(192, 168, 1, 153);
 EthernetClient clientDB;
 
+/* Macros */
+#define BUTTON1    7
+#define BUTTON2    8
+#define DEBUG_LED  13
+#define NUM_LAMPS  5
+#define LAMP_OFF   0
+#define LAMP_ON    1
+#define LAMP_LEFT  2
+#define LAMP_RIGHT 4
+#define LAMP_BOTH  6
+
+
 /* Constant variables */
 // Philips Hue variables
 const char    hueBridgeIP[] = "192.168.1.188"; // IP found for the Philips Hue bridge
@@ -41,15 +52,6 @@ const char    hueUsername[] = "newdeveloper";  // Developer name created when re
 const uint8_t hueBridgePort = 80;
 
 // Constant identifiers
-const uint8_t BUTTON1    = 7;
-const uint8_t BUTTON2    = 8;
-const uint8_t DEBUG_LED  = 13;
-const uint8_t NUM_LAMPS  = 6;
-const uint8_t LAMP_OFF   = 0;
-const uint8_t LAMP_ON    = 1;
-const uint8_t LAMP_LEFT  = 2;
-const uint8_t LAMP_RIGHT = 4;
-const uint8_t LAMP_BOTH  = 6;
 const byte SENSOR_TEMP1[] = {0x40, 0xC6, 0x74, 0xF3};
 const byte SENSOR_TEMP2[] = {0x40, 0xC6, 0x73, 0xFB};
 const byte SENSOR_GAS[]   = {0x40, 0xC6, 0x73, 0xE7};
@@ -60,10 +62,10 @@ const uint16_t MAX_GAS_LEVEL = 500;
 
 // Constant strings
 // String commandOn = "{\"on\": true,\"bri\": 215,\"effect\": \"colorloop\",\"alert\": \"select\",\"hue\": 0,\"sat\":0}"; // full command line
-const char* commandOn    = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-const char* commandOff   = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
-const char* commandLeft  = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
-const char* commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
+const String commandOn    = "{\"on\": true,\"bri\": 215,\"hue\": 0,\"sat\":0}";
+const String commandOff   = "{\"on\": false,\"bri\": 215,\"hue\": 0,\"sat\":0}";
+const String commandLeft  = "{\"on\": true,\"bri\": 215,\"hue\": 20000,\"sat\":235}";
+const String commandRight = "{\"on\": true,\"bri\": 215,\"hue\": 50000,\"sat\":235}";
 
 // Constants for paths: 1 for lamp being part of such path, 0 for not
 const uint8_t pathLeft[NUM_LAMPS]  = {1, 0, 0, 1, 1, 1};
@@ -76,20 +78,21 @@ boolean  pathUsed[]      = {false, false};             // Length equal to number
 uint8_t  i;
 uint32_t color[NUM_LAMPS];                     // current color for each lamp
 uint32_t colorGas = 0;
-unsigned long int previousTimePath = 0, previousTimeGas = 0, currentTime;
+uint64_t previousTimePath = 0xFFFFFFFF, previousTimeGas = 0xFFFFFFFF, currentTime;
 float    lastValidTemp;
 char     cmd;
-String  command;
+String command;
 boolean gasDetected = false;
 
 
-// Initialize the Ethernet server library
+/* Initialize the Ethernet server library */
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
 EthernetClient clientB;
 
+
 /* Initialize SoftwareSerial ports */
-// SoftwareSerial xbee(12, 13); // RX, TX
+SoftwareSerial xbee(12, 13); // RX, TX
 
 
 /* Setup function */
@@ -101,28 +104,25 @@ void setup() {
   pinMode(BUTTON2, INPUT);
 
   // Initialize Serial services
-  // xbee.begin(9600);
   Serial.begin(9600);
-  Serial1.begin(9600);
+  xbee.begin(9600);
 
   // Initialize Ethernet server
   Serial.println("Ethernet.begin initializing");
   Ethernet.begin(mac, ip); // initialize Ethernet device
   server.begin(); // start to listen for clients
   Serial.println("Ethernet.begin executado");
-  delay(100);
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(DEBUG_LED, HIGH);
-    delay(50);
-    digitalWrite(DEBUG_LED, LOW);
-  }
+  delay(1000);
   Serial.println("Ready for commands");
-
+  
 }
 
-/* Loop main function */
-void loop() {
 
+/* ==============================================================================
+ *  Loop main function
+============================================================================== */
+void loop() {
+  
   String httpReq; // stores the HTTP request
   EthernetClient client = server.available(); // try to get client
 
@@ -180,12 +180,11 @@ void loop() {
 
   // Evaluate state of lamps
   if (gasDetected) {
-    Serial.println("gasDetected");
     gasToLamps();
   }
   else {
     for (i = 0; i < NUM_LAMPS; i++) {
-      if (path[i] >= LAMP_BOTH) {
+      if (path[i] == 6) {
         currentTime = millis();
         if ((previousTimePath + INTERVAL) < currentTime) { // need to fix for millis reseting
           color[i] = 70000 - color[i]; // if color is 20000 turn it to 50000 and vice versa
@@ -204,7 +203,9 @@ void loop() {
 
     if (cmd == 't' || cmd == 'T') {
       showTemp();
-    } else if (cmd == 'L' || cmd == 'l') {
+    }
+
+    if (cmd == 'L' || cmd == 'l') {
       //getPreviousState();
       addPath(LAMP_LEFT, "Going to left <--");
     } else if (cmd == 'R' || cmd == 'r') {
@@ -230,7 +231,9 @@ void loop() {
   }
 }
 
-/* Auxiliary functions */
+/* ==============================================================================
+ *  Auxiliary functions
+============================================================================== */
 // Connect and send an HTTP request to the database
 void connect() {
   if (clientDB.connect(serverDB, 8081)) {
@@ -377,26 +380,25 @@ void sendHtmlPage(EthernetClient client, String httpReq) {
     "</html>"
   );
 }
-
 void getTemp() {
 
   byte discard, analogHigh, analogLow;
   uint16_t analogValue = 0;
-  uint8_t sender[4], i;
+  uint8_t sender[4];
   float temp = 0;
   boolean received = false;
 
   // make sure everything we need is in the buffer
-  if (Serial1.available() >= 21) {
+  if (xbee.available() >= 21) {
     // look for the start byte
-    if (Serial1.read() == 0x7E) {
+    if (xbee.read() == 0x7E) {
       // read the variables that we're not using out of the buffer
-      for (i = 1; i < 8 ; i++) discard = Serial1.read();
+      for (i = 1; i < 8 ; i++) discard = xbee.read();
       // address of sender (bytes from 8 to 11)
-      for (i = 8; i < 12; i++) sender[i] = Serial1.read();
-      for (i = 12; i < 19; i++) discard = Serial1.read();
-      analogHigh = Serial1.read();
-      analogLow = Serial1.read();
+      for (i = 8; i < 12; i++) sender[i] = xbee.read();
+      for (i = 12; i < 19; i++) discard = xbee.read();
+      analogHigh = xbee.read();
+      analogLow = xbee.read();
       analogValue = analogLow + (analogHigh * 256);
       analyzeMessage(sender, &analogValue);
     }
@@ -438,13 +440,13 @@ float convertTemp(uint16_t* analogValue) {
 }
 
 void showTemp() {
-
+  
   Serial.print("Temperature: ");
   Serial.print(lastValidTemp);
   Serial.println(" ºC");
   tempToLamp(&lastValidTemp);
   delay(3000);
-  setAllLamps(LAMP_ON, commandOn);
+  setAllLamps(0, commandOn);
   pathUsed[0] = pathUsed[1] = 0;
 
 }
@@ -481,6 +483,8 @@ void gasToLamps() {
     setAllLamps(-2, command);
     previousTimeGas = currentTime;
   }
+  command = "{\"on\": true,\"bri\": 215,\"hue\": 5000,\"sat\":235}";
+  setAllLamps(0, command);
 
 }
 
@@ -492,7 +496,7 @@ void setAllLamps(uint8_t numPath, String message) {  // numPath: 0 for all off, 
 
     for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
-      path[j - 1] = LAMP_OFF;
+      path[j - 1] = -1;
       delay(50);
     }
     pathUsed[0] = pathUsed[1] = false;
@@ -501,7 +505,7 @@ void setAllLamps(uint8_t numPath, String message) {  // numPath: 0 for all off, 
 
     for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
-      path[j - 1] = LAMP_ON;
+      path[j - 1] = 0;
       delay(50);
     }
     pathUsed[0] = pathUsed[1] = false;
@@ -510,7 +514,7 @@ void setAllLamps(uint8_t numPath, String message) {  // numPath: 0 for all off, 
 
     for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
-      path[j - 1] = LAMP_LEFT;
+      path[j - 1] = 1;
       delay(50);
     }
     pathUsed[0] = true;
@@ -520,7 +524,7 @@ void setAllLamps(uint8_t numPath, String message) {  // numPath: 0 for all off, 
 
     for (int j = 1; j < NUM_LAMPS + 1; j++) {
       setHue(j, command);
-      path[j - 1] = LAMP_RIGHT;
+      path[j - 1] = 2;
       delay(50);
     }
     pathUsed[0] = 0 ;
@@ -581,10 +585,10 @@ void addPath(uint8_t addedPath, String message) {  // addedPath: 1 for left, 2 f
 void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left, 2 for right
 
   uint8_t j;
-
+  
   Serial.println(message);
 
-  if (modifiedPath == LAMP_LEFT) { // left case
+  if (modifiedPath == 1) { // left case
     if (pathUsed[0] == false) {
       Serial.println("Error: left path is not being used");
     } else {
@@ -592,7 +596,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
 
       for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathLeft[j - 1] == true) {
-          if (path[j - 1] >= LAMP_BOTH) {
+          if (path[j - 1] == LAMP_BOTH) {
             setHue(j, commandRight);
           } else {
             setHue(j, commandOn);
@@ -603,7 +607,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
         }
       }
     }
-  } else if (modifiedPath == LAMP_RIGHT) { // right case
+  } else if (modifiedPath == 2) { // right case
     if (pathUsed[1] == false) {
       Serial.println("Error: right path is not being used");
     } else {
@@ -611,7 +615,7 @@ void deletePath(int modifiedPath, String message) { // modifiedPath: 1 for left,
 
       for (j = 1; j < NUM_LAMPS + 1; j++) {
         if (pathRight[j - 1] == true) {
-          if (path[j - 1] >= LAMP_BOTH) {
+          if (path[j - 1] == LAMP_BOTH) {
             setHue(j, commandLeft);
           } else {
             setHue(j, commandOn);
@@ -657,3 +661,4 @@ boolean setHue(uint8_t lightNum, String command) {
   }
 
 }
+
