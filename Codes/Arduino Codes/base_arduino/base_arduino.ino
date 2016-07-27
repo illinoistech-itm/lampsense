@@ -150,9 +150,9 @@ void loop() {
 
   // Evaluate if button was pressed - Button 1 for left path, button 2 for right path
   if (digitalRead(BUTTON1) == HIGH) {
-    deletePath(1, "\n\nPerson arrived at left side.");
+    deletePath(2, "\n\nPerson arrived at left side.");
   } else if (digitalRead(BUTTON2) == HIGH) {
-    deletePath(2, "\n\nPerson arrived at right side.");
+    deletePath(4, "\n\nPerson arrived at right side.");
   }
 
   // Evaluate state of lamps
