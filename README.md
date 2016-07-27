@@ -11,3 +11,7 @@ This repo contains the code and schematics for the Intelligent Lights Systems.
 	<li>Use a browser to open the Ethernet shield IP address configured on the base code.</li>
 	<li>Use the buttons and sensors to operate the light bulbs.</li>
 </ul>
+## Additional comments
+<ul>
+	<li>You should be connected to the internet in order to watch the video on the presentation. It is hosted on YouTube.</li>
+</ul>
